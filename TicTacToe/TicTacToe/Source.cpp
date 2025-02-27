@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 
 class TicTacToe {
 private:
@@ -8,6 +10,7 @@ private:
 	bool gameOver; // True if game is over
 	char aiPlayer; // AI player
 	char humanPlayer; // Human player
+	int difficulty; // AI difficulty 1=easy, 2=medium, 3=hard
 
 public:
     // Constructor
@@ -18,6 +21,10 @@ public:
         gameOver = false;
         humanPlayer = 'X';
         aiPlayer = 'O';
+        difficulty = 3;
+
+		// Seed the random number generator
+		srand(time(NULL));
     }
 
     // Display the game board
@@ -119,10 +126,61 @@ public:
         aiPlayer = ai;
     }
 
+	void setDifficulty(int level) {
+		if (level >= 1 && level <= 3) {
+			difficulty = level;
+		}
+	}
+    
     // AI move using minimax algorithm
     void aiMove() {
         if (gameOver) return;
 
+        // Random chance to make the AI sub-optimal based on difficulty level
+        int randomChance = rand() % 10; // Random number between 0 and 9
+
+        if (difficulty == 1 && randomChance < 7) {
+            // Easy: 70% chance to make a random move
+            makeRandomMove();
+            return;
+        }
+        else if (difficulty == 2 && randomChance < 3) {
+            // Medium: 30% chance to make a random move
+            makeRandomMove();
+            return;
+        }
+        else {
+            // Hard: Always optimal (or at lower difficulties when random chance doesn't trigger)			
+            makeOptimalMove();
+        }
+    }
+
+    // Make a random valid move
+    void makeRandomMove() {
+        std::vector<std::pair<int, int>> availableMoves;
+
+        // Find all available moves
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == ' ') {
+                    availableMoves.push_back(std::make_pair(i, j));
+                }
+            }
+        }
+
+        if (!availableMoves.empty()) {
+            // Choose a random move
+            int randomIndex = rand() % availableMoves.size();
+            int row = availableMoves[randomIndex].first;
+            int col = availableMoves[randomIndex].second;
+
+            std::cout << "AI randomly chooses position: " << row << ", " << col << std::endl;
+            makeMove(row, col);
+        }
+    }
+
+    // Make the optimal move using minimax
+    void makeOptimalMove() {
         int bestScore = -1000;
         int bestRow = -1;
         int bestCol = -1;
@@ -151,7 +209,7 @@ public:
         }
 
         // Make the best move
-        std::cout << "AI chooses position: " << bestRow << ", " << bestCol << std::endl;
+        std::cout << "AI optimally chooses position: " << bestRow << ", " << bestCol << std::endl;
         makeMove(bestRow, bestCol);
     }
 
@@ -244,13 +302,24 @@ int main() {
     TicTacToe game;
     int row, col;
 	int gameMode;
+    int difficulty = 3;
 
     std::cout << "Welcome to Tic Tac Toe!\n";
-	std::cout << "Choose game mode: \n";
-	std::cout << "1. Player vs Player\n";
-	std::cout << "2. Player vs AI\n";
-	std::cout << "Enter game mode (1 or 2): ";
-	std::cin >> gameMode;
+    std::cout << "Choose game mode:\n";
+    std::cout << "1. Player vs Player\n";
+    std::cout << "2. Player vs AI\n";
+    std::cout << "Enter your choice (1 or 2): ";
+    std::cin >> gameMode;
+
+    if (gameMode == 2) {
+        std::cout << "Choose AI difficulty:\n";
+        std::cout << "1. Easy\n";
+        std::cout << "2. Medium\n";
+        std::cout << "3. Hard\n";
+        std::cout << "Enter your choice (1-3): ";
+        std::cin >> difficulty;
+        game.setDifficulty(difficulty);
+    }
 
 	std::cout << "\nEnter row (0-2) and column (0-2) to make a move.\n";
 

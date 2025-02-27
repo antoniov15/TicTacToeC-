@@ -1,4 +1,5 @@
 ﻿  Source.cpp
+C:\Facultate\Proiecte\TicTacToeCpp\TicTacToe\TicTacToe\Source.cpp(27,13): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   TicTacToe.vcxproj -> C:\Facultate\Proiecte\TicTacToeCpp\TicTacToe\x64\Debug\TicTacToe.exe
   'pwsh.exe' is not recognized as an internal or external command,
   operable program or batch file.
