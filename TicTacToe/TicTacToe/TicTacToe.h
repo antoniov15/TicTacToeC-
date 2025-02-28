@@ -60,8 +60,12 @@ public:
 	void makeOptimalMove();
 	
 	// Minimax algorithm
-	int minimax(std::vector<std::vector<char>>& board, int depth, bool isMaximizing);
+	int minimax(std::vector<std::vector<char>>& board, int depth, bool isMaximizing, int depthMax);
 	
+	int evaluateBoard();
+
+	char getOpponent(char player);
+
 	// Check win for player
 	bool checkWinForPlayer(char player);
 

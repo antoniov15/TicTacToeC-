@@ -135,7 +135,7 @@ bool TicTacToe::makeMove(int row, int col) {
 	return true;
 }
 
-bool TicTacToe::checkWin() {
+/*bool TicTacToe::checkWin() {
 	// Check rows
 	for (int i = 0; i < 3; i++) {
 		if (board[i][0] == currentPlayer && board[i][1] == currentPlayer && board[i][2] == currentPlayer) {
@@ -159,12 +159,16 @@ bool TicTacToe::checkWin() {
 	}
 
 	return false;
+}*/
+
+bool TicTacToe::checkWin() {
+	return checkWinForPlayer(currentPlayer);
 }
 
 // Check if the game is a draw
 bool TicTacToe::checkDraw() {
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (int i = 0; i < boardSize; i++) {
+		for (int j = 0; j < boardSize; j++) {
 			if (board[i][j] == ' ') {
 				return false; // If there's an empty space, it's not a draw
 			}
@@ -224,8 +228,8 @@ void TicTacToe::makeRandomMove() {
 	std::vector<std::pair<int, int>> availableMoves;
 
 	// Find all available moves
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (int i = 0; i < boardSize; i++) {
+		for (int j = 0; j < boardSize; j++) {
 			if (board[i][j] == ' ') {
 				availableMoves.push_back(std::make_pair(i, j));
 			}
@@ -245,19 +249,26 @@ void TicTacToe::makeRandomMove() {
 
 // Make the optimal move using minimax
 void TicTacToe::makeOptimalMove() {
+	// For larger boards, pure minimax is too slow
+	// Use a depth-limited search with a maximum depth based on board size
+	int maxDepth;
+	if (boardSize == 3) maxDepth = 9; // Full search for 3x3
+	else if (boardSize == 4) maxDepth = 5; // Limit depth for 4x4
+	else maxDepth = 3; // Very limited for 5x5
+	
 	int bestScore = -1000;
 	int bestRow = -1;
 	int bestCol = -1;
 
 	// Try all possible moves and choose the best one
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (int i = 0; i < boardSize; i++) {
+		for (int j = 0; j < boardSize; j++) {
 			if (board[i][j] == ' ') {
 				// Make the move
 				board[i][j] = currentPlayer;
 
 				// Calculate score for this move
-				int score = minimax(board, 0, false);
+				int score = minimax(board, 0, false, maxDepth);
 
 				// Undo the move
 				board[i][j] = ' ';
@@ -268,17 +279,29 @@ void TicTacToe::makeOptimalMove() {
 					bestRow = i;
 					bestCol = j;
 				}
+
+				// Add randomness to equally good moves
+				else if (score == bestScore && rand() % 2 == 0) {
+					bestRow = i;
+					bestCol = j;
+				}
 			}
 		}
 	}
 
 	// Make the best move
-	std::cout << "AI optimally chooses position: " << bestRow << ", " << bestCol << std::endl;
-	makeMove(bestRow, bestCol);
+	if (bestRow != -1 && bestCol != -1) {
+		std::cout << "AI optimally chooses position: " << bestRow << ", " << bestCol << std::endl;
+		makeMove(bestRow, bestCol);
+	}
+	else {
+		// Fallback to random move if no best move was found
+		makeRandomMove();
+	}
 }
 
 // Minimax algorithm
-int TicTacToe::minimax(std::vector<std::vector<char>>& board, int depth, bool isMaximizing) {
+int TicTacToe::minimax(std::vector<std::vector<char>>& board, int depth, bool isMaximizing, int maxDepth) {
 	// Check terminal states
 	if (checkWinForPlayer(aiPlayer)) {
 		return 10 - depth; // AI wins (higher score for quicker wins)
@@ -286,20 +309,22 @@ int TicTacToe::minimax(std::vector<std::vector<char>>& board, int depth, bool is
 	if (checkWinForPlayer(humanPlayer)) {
 		return depth - 10; // Human wins (lower score)
 	}
-	if (isBoardFull()) {
-		return 0; // Draw
+	if (isBoardFull() || depth >= maxDepth) {
+		return evaluateBoard(); // Draw or reached max depth, use heuristic evaluation
 	}
 
 	if (isMaximizing) {
 		// AI's turn (maximizing player)
 		int bestScore = -1000;
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
+		for (int i = 0; i < boardSize; i++) {
+			for (int j = 0; j < boardSize; j++) {
 				if (board[i][j] == ' ') {
 					board[i][j] = aiPlayer;
-					int score = minimax(board, depth + 1, false);
+					int score = minimax(board, depth + 1, false, maxDepth);
 					board[i][j] = ' ';
 					bestScore = std::max(score, bestScore);
+
+					// maybe alpha-beta pruning idkk
 				}
 			}
 		}
@@ -308,13 +333,14 @@ int TicTacToe::minimax(std::vector<std::vector<char>>& board, int depth, bool is
 	else {
 		// Human's turn (minimizing player)
 		int bestScore = 1000;
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
+		for (int i = 0; i < boardSize; i++) {
+			for (int j = 0; j < boardSize; j++) {
 				if (board[i][j] == ' ') {
 					board[i][j] = humanPlayer;
-					int score = minimax(board, depth + 1, true);
+					int score = minimax(board, depth + 1, true, maxDepth);
 					board[i][j] = ' ';
 					bestScore = std::min(score, bestScore);
+					// tot loc pentru alpha-beta pruning
 				}
 			}
 		}
@@ -322,28 +348,157 @@ int TicTacToe::minimax(std::vector<std::vector<char>>& board, int depth, bool is
 	}
 }
 
+// Evaluate the board when search is depth-limited
+int TicTacToe::evaluateBoard() {
+	// heuristic: count potential winning lines
+	int aiScore = 0;
+	int humanScore = 0;
+
+	// Helper function to count open lines
+	auto countOpenLines = [&](char player) {
+		int count = 0;
+
+		// Check rows
+		for (int i = 0; i < boardSize; i++) {
+			for (int j = 0; j <= boardSize - winLength; j++) {
+				bool canWin = true;
+				bool hasPlayer = false;
+				for (int k = 0; k < winLength; k++) {
+					if (board[i][j + k] == getOpponent(player)) {
+						canWin = false;
+						break;
+					}
+					if (board[i][j + k] == player) {
+						hasPlayer = true;
+					}
+				}
+				if (canWin && hasPlayer) count++;
+			}
+		}
+
+		// Check columns
+		for (int i = 0; i <= boardSize - winLength; i++) {
+			for (int j = 0; j < boardSize; j++) {
+				bool canWin = true;
+				bool hasPlayer = false;
+				for (int k = 0; k < winLength; k++) {
+					if (board[i + k][j] == getOpponent(player)) {
+						canWin = false;
+						break;
+					}
+					if (board[i + k][j] == player) {
+						hasPlayer = true;
+					}
+				}
+				if (canWin && hasPlayer) count++;
+			}
+		}
+
+		// Check diagonals (top-left to bottom-right)
+		for (int i = 0; i <= boardSize - winLength; i++) {
+			for (int j = 0; j <= boardSize - winLength; j++) {
+				bool canWin = true;
+				bool hasPlayer = false;
+				for (int k = 0; k < winLength; k++) {
+					if (board[i + k][j + k] == getOpponent(player)) {
+						canWin = false;
+						break;
+					}
+					if (board[i + k][j + k] == player) {
+						hasPlayer = true;
+					}
+				}
+				if (canWin && hasPlayer) count++;
+			}
+		}
+
+		// Check diagonals (top-right to bottom-left)
+		for (int i = 0; i <= boardSize - winLength; i++) {
+			for (int j = winLength - 1; j < boardSize; j++) {
+				bool canWin = true;
+				bool hasPlayer = false;
+				for (int k = 0; k < winLength; k++) {
+					if (board[i + k][j - k] == getOpponent(player)) {
+						canWin = false;
+						break;
+					}
+					if (board[i + k][j - k] == player) {
+						hasPlayer = true;
+					}
+				}
+				if (canWin && hasPlayer) count++;
+			}
+		}
+
+		return count;
+	};
+
+	aiScore = countOpenLines(aiPlayer);
+	humanScore = countOpenLines(humanPlayer);
+
+	return aiScore - humanScore;
+}
+
+char TicTacToe::getOpponent(char player) {
+	return (player == 'X') ? 'O' : 'X';
+}
+
 // Check if a specific player has won
 bool TicTacToe::checkWinForPlayer(char player) {
 	// Check rows
-	for (int i = 0; i < 3; i++) {
-		if (board[i][0] == player && board[i][1] == player && board[i][2] == player) {
-			return true;
+	for (int i = 0; i < boardSize; i++) {
+		for (int j = 0; j <= boardSize - winLength; j++) {
+			bool win = true;
+			for (int k = 0; k < winLength; k++) {
+				if (board[i][j + k] != player) {
+					win = false;
+					break;
+				}
+			}
+			if (win) return true;
 		}
 	}
 
 	// Check columns
-	for (int i = 0; i < 3; i++) {
-		if (board[0][i] == player && board[1][i] == player && board[2][i] == player) {
-			return true;
+	for (int i = 0; i <= boardSize - winLength; i++) {
+		for (int j = 0; j < boardSize; j++) {
+			bool win = true;
+			for (int k = 0; k < winLength; k++) {
+				if (board[i + k][j] != player) {
+					win = false;
+					break;
+				}
+			}
+			if (win) return true;
 		}
 	}
 
-	// Check diagonals
-	if (board[0][0] == player && board[1][1] == player && board[2][2] == player) {
-		return true;
+	// Check diagonals (top-left to bottom-right)
+	for (int i = 0; i <= boardSize - winLength; i++) {
+		for (int j = 0; j <= boardSize - winLength; j++) {
+			bool win = true;
+			for (int k = 0; k < winLength; k++) {
+				if (board[i + k][j + k] != player) {
+					win = false;
+					break;
+				}
+			}
+			if (win) return true;
+		}
 	}
-	if (board[0][2] == player && board[1][1] == player && board[2][0] == player) {
-		return true;
+
+	// Check diagonals (top-right to bottom-left)
+	for (int i = 0; i <= boardSize - winLength; i++) {
+		for (int j = winLength - 1; j < boardSize; j++) {
+			bool win = true;
+			for (int k = 0; k < winLength; k++) {
+				if (board[i + k][j - k] != player) {
+					win = false;
+					break;
+				}
+			}
+			if (win) return true;
+		}
 	}
 
 	return false;
@@ -351,8 +506,8 @@ bool TicTacToe::checkWinForPlayer(char player) {
 
 // Check if the board is full
 bool TicTacToe::isBoardFull() {
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (int i = 0; i < boardSize; i++) {
+		for (int j = 0; j < boardSize; j++) {
 			if (board[i][j] == ' ') {
 				return false;
 			}
