@@ -1,11 +1,9 @@
-//#include "TicTacToe.h"
-
 #include <iostream>
-#include <vector>
-#include <ctime>
-#include <cstdlib>
+#include <limits>
 
-class TicTacToe {
+#include "TicTacToe.h"
+
+/*class TicTacToe {
 private:
 	std::vector<std::vector<char>> board; //tic tac toe board
 	char currentPlayer; // X or O
@@ -298,56 +296,97 @@ public:
         }
         return true;
     }
-};
+};*/
+
+// Function to clear the input buffer after invalid input
+void clearInputBuffer() {
+	std::cin.clear();
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
+// Function to get a valid integer input form user within a specified range
+int getValidInput(int min, int max) {
+    int input;
+
+    while (true) {
+        std::cin >> input;
+        if (std::cin.fail() || input < min || input > max) {
+            std::cout << "Invalid input. Please enter a number between " << min << " and " << max << ": ";
+            clearInputBuffer();
+        }
+        else {
+            break;
+        }
+        return input;
+    }
+}
 
 int main() {
     TicTacToe game;
     int row, col;
 	int gameMode;
     int difficulty = 3;
+    char playAgain = 'y';
 
-    std::cout << "Welcome to Tic Tac Toe!\n";
-    std::cout << "Choose game mode:\n";
-    std::cout << "1. Player vs Player\n";
-    std::cout << "2. Player vs AI\n";
-    std::cout << "Enter your choice (1 or 2): ";
-    std::cin >> gameMode;
+    std::cout << "=================================\n";
+    std::cout << "       TIC TAC TOE GAME         \n";
+    std::cout << "=================================\n\n";
 
-    if (gameMode == 2) {
-        std::cout << "Choose AI difficulty:\n";
-        std::cout << "1. Easy\n";
-        std::cout << "2. Medium\n";
-        std::cout << "3. Hard\n";
-        std::cout << "Enter your choice (1-3): ";
-        std::cin >> difficulty;
-        game.setDifficulty(difficulty);
-    }
+    while (playAgain == 'y' || playAgain == 'Y') {
+        // Reset game for a new round
+        game.resetGame();
 
-	std::cout << "\nEnter row (0-2) and column (0-2) to make a move.\n";
+        // Game mode selection
+        std::cout << "Choose game mode:\n";
+        std::cout << "1. Player vs Player\n";
+        std::cout << "2. Player vs AI\n";
+        std::cout << "Enter your choice (1 or 2): ";
+        gameMode = getValidInput(1, 2);
 
-    while (!game.isGameOver()) {
-		game.displayBoard();
-
-        if (gameMode == 1 || game.getCurrentPlayer() == 'X') {
-			// Human player's turn
-			std::cout << "Player " << game.getCurrentPlayer() << "'s turn.\n";
-			std::cout << "Enter row: ";
-			std::cin >> row;
-			std::cout << "Enter column: ";
-			std::cin >> col;
-
-            if (!game.makeMove(row, col)) {
-                std::cout << "Invalid move! Try again.\n";
-            }
-		}
-        else {
-			// AI's turn
-			std::cout << "AI is thinking...\n";
-			game.aiMove();
+        // If AI mode, set difficulty
+        if (gameMode == 2) {
+            std::cout << "Choose AI difficulty:\n";
+            std::cout << "1. Easy\n";
+            std::cout << "2. Medium\n";
+            std::cout << "3. Hard\n";
+            std::cout << "Enter your choice (1-3): ";
+            difficulty = getValidInput(1, 3);
+            game.setDifficulty(difficulty);
         }
+
+        std::cout << "\nGame starts! Enter row and column (0-2) to make a move.\n";
+
+        // Main game loop
+        while (!game.isGameOver()) {
+            game.displayBoard();
+
+            if (gameMode == 1 || game.getCurrentPlayer() == 'X') {
+                // Human player's turn
+                std::cout << "Player " << game.getCurrentPlayer() << "'s turn.\n";
+                std::cout << "Enter row: ";
+                row = getValidInput(0, 2);
+                std::cout << "Enter column: ";
+                col = getValidInput(0, 2);
+
+                if (!game.makeMove(row, col)) {
+                    std::cout << "That position is already taken! Try again.\n";
+                }
+            }
+            else {
+                // AI's turn
+                std::cout << "AI is thinking...\n";
+                game.aiMove();
+            }
+        }
+
+        // Display final result
+        game.displayStats();
+
+        // Ask if player wants to play again
+        std::cout << "Do you want to play again? (y/n): ";
+        std::cin >> playAgain;
     }
 
-	std::cout << "Game over! Thanks for playing\n";
-
+    std::cout << "\nThanks for playing Tic Tac Toe!\n";
     return 0;
 }
