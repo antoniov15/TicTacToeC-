@@ -15,10 +15,15 @@ private:
 	int playerWins;
 	int aiWins;
 	int draws;
+	int boardSize; // Size of the board (3, 4 or 5)
+	int winLength; // Member of markers in a row needed to win
 
 public:
 	/// Constructor
 	TicTacToe();
+
+	/// Constructor with boardsize
+	TicTacToe(int size);
 
 	/// Methods
 	// Display the game board
@@ -68,4 +73,10 @@ public:
 
 	// Reset the game board for a new game
 	void resetGame();
+
+	// Set the board size
+	void setBoardSize(int size);
+
+	// Get board size
+	int getBoardSize() const;
 };

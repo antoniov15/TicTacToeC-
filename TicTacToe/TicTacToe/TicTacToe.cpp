@@ -1,5 +1,8 @@
 #include "TicTacToe.h"
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
+#include <algorithm>
 
 TicTacToe::TicTacToe() {
 	// Initialize 3x3 board with empty spaces
@@ -12,31 +15,92 @@ TicTacToe::TicTacToe() {
 	playerWins = 0;
 	aiWins = 0;
 	draws = 0;
+	boardSize = 3;
+	winLength = 3;
+
+	// Initialize board with empty spaces
+	board = std::vector<std::vector<char>>(boardSize, std::vector<char>(boardSize, ' '));
 
 	//Seed the random number generator
+	srand(static_cast<unsigned int>(time(NULL)));
+}
+
+TicTacToe::TicTacToe(int size) {
+	currentPlayer = 'X'; // X goes first
+	gameOver = false;
+	humanPlayer = 'X';
+	aiPlayer = 'O';
+	difficulty = 3;
+	playerWins = 0;
+	aiWins = 0;
+	draws = 0;
+
+	// Set board size
+	setBoardSize(size);
+
+	// Seed the random number generator
 	srand(static_cast<unsigned int>(time(NULL)));
 }
 
 // Display the game board
 void TicTacToe::displayBoard() {
 	std::cout << "\n";
-	std::cout << "  0 1 2\n";
-	for (int i = 0; i < 3; i++) {
-		std::cout << i << " ";
-		for (int j = 0; j < 3; j++) {
-			std::cout << board[i][j];
-			if (j < 2) std::cout << "|";
-		}
-		std::cout << "\n";
-		if (i < 2) std::cout << "  -+-+-\n";
+
+	// Print column numbers
+	std::cout << "  ";
+	for (int j = 0; j < boardSize; j++) {
+		std::cout << "  " << j << " ";
 	}
-	std::cout << "\n";
+	std::cout << " (columns)\n";
+
+	// Print top border
+	std::cout << "  +";
+	for (int j = 0; j < boardSize; j++) {
+		std::cout << "---";
+		if (j < boardSize - 1) std::cout << "+";
+	}
+	std::cout << "+\n";
+
+	// Print board
+	for (int i = 0; i < boardSize; i++) {
+		// Print row number
+		std::cout << i << " ";
+
+		// Print row contents
+		for (int j = 0; j < boardSize; j++) {
+			std::cout << "| " << board[i][j] << " ";
+		}
+		std::cout << "|\n";
+
+		// Print row separator (except after the last row)
+		if (i < boardSize - 1) {
+			std::cout << "  +";
+			for (int j = 0; j < boardSize; j++) {
+				std::cout << "---";
+				if (j < boardSize - 1) std::cout << "+";
+			}
+			std::cout << "+\n";
+		}
+	}
+
+	// Print bottom border
+	std::cout << "  +";
+	for (int j = 0; j < boardSize; j++) {
+		std::cout << "---";
+		if (j < boardSize - 1) std::cout << "+";
+	}
+	std::cout << "+\n";
+
+	std::cout << "(rows)\n\n";
 }
 
 // Make a move
 bool TicTacToe::makeMove(int row, int col) {
+	//row--;
+	//col--;
+	
 	// Check if the move is valid
-	if (row < 0 || row > 2 || col < 0 || col > 2 || board[row][col] != ' ' || gameOver) {
+	if (row < 0 || row >= boardSize || col < 0 || col >= boardSize || board[row][col] != ' ' || gameOver) {		
 		return false;
 	}
 
@@ -315,8 +379,8 @@ void TicTacToe::displayStats() {
 // Reset the game board for a new game
 void TicTacToe::resetGame() {
 	// Clear the board
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (int i = 0; i < boardSize; i++) {
+		for (int j = 0; j < boardSize; j++) {
 			board[i][j] = ' ';
 		}
 	}
@@ -324,4 +388,34 @@ void TicTacToe::resetGame() {
 	// Reset game state
 	currentPlayer = 'X';
 	gameOver = false;
+}
+
+void TicTacToe::setBoardSize(int size)
+{
+	// Validate size
+	if (size < 3) size = 3;
+	if (size > 5) size = 5;
+
+	boardSize = size;
+
+	// Set win length based on bord size
+	if (size == 3) {
+		winLength = 3;
+	}
+	else if (size == 4) {
+		winLength = 4;
+	}
+	else {
+		winLength = 5;
+	}
+
+	// Resize the board
+	board.resize(boardSize);
+	for (int i = 0; i < boardSize; ++i) {
+		board[i].resize(boardSize, ' ');
+	}
+}
+
+int TicTacToe::getBoardSize() const {
+	return boardSize;
 }
